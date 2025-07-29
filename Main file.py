@@ -99,23 +99,23 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
 
             #customization and maze game images
             self.wall_images = [
-                PhotoImage(file=r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\Wall #1.png").subsample(35),
-                ImageTk.PhotoImage((Image.open(r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\Wall #2.jpg").resize((50, 50))), Image.Resampling.LANCZOS),
-                ImageTk.PhotoImage((Image.open(r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\Wall #3.jpg").resize((50, 50))), Image.Resampling.LANCZOS),
-                ImageTk.PhotoImage((Image.open(r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\Wall #4.jpg").resize((50, 50))), Image.Resampling.LANCZOS)
+                PhotoImage(file=r"Images\Wall #1.png").subsample(35),
+                ImageTk.PhotoImage((Image.open(r"Images\Wall #2.jpg").resize((50, 50))), Image.Resampling.LANCZOS),
+                ImageTk.PhotoImage((Image.open(r"Images\Wall #3.jpg").resize((50, 50))), Image.Resampling.LANCZOS),
+                ImageTk.PhotoImage((Image.open(r"Images\Wall #4.jpg").resize((50, 50))), Image.Resampling.LANCZOS)
             ]
-            self.char1_frames = [(PhotoImage(file=r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\Character #2.gif", format=f'gif -index {i}')).zoom(2) for i in range(self.frameCnt)]
-            self.char2_frames = [(PhotoImage(file=r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\llama.gif", format=f'gif -index {i}')).zoom(1) for i in range(self.frameCnt)]
+            self.char1_frames = [(PhotoImage(file=r"Images\Character #2.gif", format=f'gif -index {i}')).zoom(2) for i in range(self.frameCnt)]
+            self.char2_frames = [(PhotoImage(file=r"Images\llama.gif", format=f'gif -index {i}')).zoom(1) for i in range(self.frameCnt)]
             self.character_images = [self.char1_frames, self.char2_frames]
 
             # other images
-            self.settings_img = (PhotoImage(file= r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\settings.png")).subsample(6)
+            self.settings_img = (PhotoImage(file= r"Images\settings.png")).subsample(6)
            
             # setting layout images
-            self.music_img = (PhotoImage(file= r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\music_Symbol.png")).subsample(9)
-            self.no_music_img = (PhotoImage(file=r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\nomusic_Symbol.png")).subsample(4)
-            self.volume_on_img = (PhotoImage(file=r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\volume_on.png")).subsample(4)
-            self.volume_off_img = (PhotoImage(file=r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\volume_off.png")).subsample(4)
+            self.music_img = (PhotoImage(file= r"Images\music_Symbol.png")).subsample(9)
+            self.no_music_img = (PhotoImage(file=r"Images\nomusic_Symbol.png")).subsample(4)
+            self.volume_on_img = (PhotoImage(file=r"Images\volume_on.png")).subsample(4)
+            self.volume_off_img = (PhotoImage(file=r"Images\volume_off.png")).subsample(4)
 
         def setting_layout(self):  # when settings button pressed
             theme = self.themes[self.current_theme]
@@ -514,10 +514,10 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
         def load_images(self):
             self.frameCnt = 2
             #customization and maze game images
-            self.wall_1 = PhotoImage(file=r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\Wall #1.png")
-            self.wall_2 = Image.open(r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\Wall #2.jpg")
-            self.wall_3 = Image.open(r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\Wall #3.jpg")
-            self.wall_4 = Image.open(r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\Wall #3.jpg")
+            self.wall_1 = PhotoImage(file=r"Images\Wall #1.png")
+            self.wall_2 = Image.open(r"Images\Wall #2.jpg")
+            self.wall_3 = Image.open(r"Images\Wall #3.jpg")
+            self.wall_4 = Image.open(r"Images\Wall #4.jpg")
 
             self.wall_images = [
                 self.wall_1.subsample(int(self.wall_1.width()/self.cell_size_x), int(self.wall_1.height()/self.cell_size_y)),

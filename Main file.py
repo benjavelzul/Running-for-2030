@@ -5,7 +5,7 @@ import tkinter as tk
 from random import randint
 from PIL import Image, ImageTk
 import time
-import csv
+import pandas as pd
 
 class SDG_App:
     class Applayout:
@@ -671,16 +671,14 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
                         self.end_time = time.time()
                         self.total_time = round(self.end_time - self.start_time)
                         score = int(self.score * 100) + ((150 - self.total_time) * 5)
-                        with open('output.csv', mode='w', newline='') as file:
-                            csv_writer = csv.writer(file)
-                            csv_writer.writerows(score)
-                        with open('highscores.csv', mode='r', newline='') as file:
-                            csv_reader = csv.reader(file)
-                            header = next(csv_reader)  # Read the header row (optional)
-                            highscores = []
-                            for row in csv_reader:
-                                highscores.append[row]
-                            highscore = (highscores.sort())[0]
+                        df = pd.read_csv("highscores.csv")
+                        highscore = df.iloc[self.mode, 1]
+
+                        if highscore < score:
+                            highscore = score
+                            df.iat[self.mode, 1] = score
+                            df.to_csv('highscores.csv', index=False)
+                            
                         message_str = f"Congratulations!\nYou've completed the maze!\nItems collected: {self.score}/{self.total_items} \nTime used {self.total_time} seconds \nTotal score: {(self.score * 100) + ((150 - self.total_time) * 5)}, Highest score: {highscore}"
                         fin_window = Toplevel(self.master)
                         self.finished = True

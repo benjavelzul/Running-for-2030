@@ -526,22 +526,22 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
                 ImageTk.PhotoImage(self.wall_3.resize((self.cell_size_x, self.cell_size_y)), Image.Resampling.LANCZOS),
                 ImageTk.PhotoImage(self.wall_4.resize((self.cell_size_x, self.cell_size_y)), Image.Resampling.LANCZOS)
             ]
-            self.char1_frames = self.load_gif_frames(r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\Character #2.gif")
-            self.char2_frames = self.load_gif_frames(r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\llama.gif")
+            self.char1_frames = self.load_gif_frames(r"Images\Character #2.gif")
+            self.char2_frames = self.load_gif_frames(r"Images\llama.gif")
             self.character_images = [self.char1_frames, self.char2_frames]
 
             # item images
-            self.item1 = self.load_gif_frames(r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\Soup.gif")
-            self.item2 = self.load_gif_frames(r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\Book.gif")
-            self.item3 = self.load_gif_frames(r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\water item.gif")
-            self.item4 = self.load_gif_frames(r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\renewable energy symbol.gif")
-            self.item5 = self.load_gif_frames(r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\Tree (1).gif")
-            self.item6 = self.load_gif_frames(r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\Plastic Bag from Ocean (1).gif")
-            self.invalid_mode = self.load_gif_frames(r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\bouncing ball.gif")
+            self.item1 = self.load_gif_frames(r"Images\Soup.gif")
+            self.item2 = self.load_gif_frames(r"Images\Book.gif")
+            self.item3 = self.load_gif_frames(r"Images\water item.gif")
+            self.item4 = self.load_gif_frames(r"Images\renewable energy symbol.gif")
+            self.item5 = self.load_gif_frames(r"Images\Tree (1).gif")
+            self.item6 = self.load_gif_frames(r"Images\Plastic Bag from Ocean (1).gif")
+            self.invalid_mode = self.load_gif_frames(r"Images\bouncing ball.gif")
             self.item_list = [self.item1, self.item2, self.item3, self.item4, [self.item5, self.item6]]
             self.item_indices = [12, 9, 6, 3, 0]  # Indices for each item type based on mode
 
-            self.playbutton = (PhotoImage(file=r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\Play button.png")).subsample(5)
+            self.playbutton = (PhotoImage(file=r"Images\Play button.png")).subsample(5)
 
         def load_gif_frames(self, path):
             gif = Image.open(path)

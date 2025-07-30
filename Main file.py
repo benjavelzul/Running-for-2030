@@ -5,6 +5,7 @@ import tkinter as tk
 from random import randint
 from PIL import Image, ImageTk
 import time
+import csv
 
 class SDG_App:
     class Applayout:
@@ -176,18 +177,18 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
             self.lev_sel_canvas.create_window(210, 100, window=lev3)
             self.lev_sel_canvas.create_window(280, 100, window=lev4)
             self.lev_sel_canvas.create_window(350, 100, window=lev5)
-            self.lev_sel_canvas.create_window(70, 150, window=lev6)
-            self.lev_sel_canvas.create_window(140, 150, window=lev7)
-            self.lev_sel_canvas.create_window(210, 150, window=lev8)
-            self.lev_sel_canvas.create_window(280, 150, window=lev9)
-            self.lev_sel_canvas.create_window(350, 150, window=lev10)
-            self.lev_sel_canvas.create_window(70, 200, window=lev11)
-            self.lev_sel_canvas.create_window(140, 200, window=lev12)
-            self.lev_sel_canvas.create_window(210, 200, window=lev13)
-            self.lev_sel_canvas.create_window(280, 200, window=lev14)
-            self.lev_sel_canvas.create_window(350, 200, window=lev15)
+            self.lev_sel_canvas.create_window(70, 140, window=lev6)
+            self.lev_sel_canvas.create_window(140, 140, window=lev7)
+            self.lev_sel_canvas.create_window(210, 140, window=lev8)
+            self.lev_sel_canvas.create_window(280, 140, window=lev9)
+            self.lev_sel_canvas.create_window(350, 140, window=lev10)
+            self.lev_sel_canvas.create_window(70, 180, window=lev11)
+            self.lev_sel_canvas.create_window(140, 180, window=lev12)
+            self.lev_sel_canvas.create_window(210, 180, window=lev13)
+            self.lev_sel_canvas.create_window(280, 180, window=lev14)
+            self.lev_sel_canvas.create_window(350, 180, window=lev15)
             #self.lev_sel_canvas.create_window(200, 150, window=random_lev)
-            self.lev_sel_canvas.create_window(200, 230, window=multiplayer_btn)
+            self.lev_sel_canvas.create_window(200, 220, window=multiplayer_btn)
 
         def change_mazegame_multiplayer(self):
             if self.multi_or_normal == True:
@@ -669,7 +670,18 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
                     if [new_row, new_col] == self.end_pos:
                         self.end_time = time.time()
                         self.total_time = round(self.end_time - self.start_time)
-                        message_str = f"Congratulations!\nYou've completed the maze!\nItems collected: {self.score}/{self.total_items} \nTime used {self.total_time} seconds \nTotal score: {(self.score * 100) + ((150 - self.total_time) * 5)}"
+                        score = int(self.score * 100) + ((150 - self.total_time) * 5)
+                        with open('output.csv', mode='w', newline='') as file:
+                            csv_writer = csv.writer(file)
+                            csv_writer.writerows(score)
+                        with open('highscores.csv', mode='r', newline='') as file:
+                            csv_reader = csv.reader(file)
+                            header = next(csv_reader)  # Read the header row (optional)
+                            highscores = []
+                            for row in csv_reader:
+                                highscores.append[row]
+                            highscore = (highscores.sort())[0]
+                        message_str = f"Congratulations!\nYou've completed the maze!\nItems collected: {self.score}/{self.total_items} \nTime used {self.total_time} seconds \nTotal score: {(self.score * 100) + ((150 - self.total_time) * 5)}, Highest score: {highscore}"
                         fin_window = Toplevel(self.master)
                         self.finished = True
                         message = Label(

@@ -38,6 +38,7 @@ class SDG_App:
             self.master = None
             self.cur_music = False
             self.cur_volume = False
+            self.maze_canvas = None
             # Remove the recursive initialization
             self.Mazegame = None  # We'll initialize it when needed
             self.init_mazegame()
@@ -534,6 +535,7 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
             else:
                 self.finished = True
                 self.stop = True
+                self.maze_canvas = None
         
         def load_images(self):
             self.frameCnt = 2
@@ -775,7 +777,11 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
                 self.update_timer()
         
         def update_timer(self):
-            if (self.maze_canvas is None) or (self.finished == True) or (self.stop == True):
+            if self.maze_canvas is None:
+                return
+            elif self.finished == True:
+                return
+            elif self.stop == True:
                 return
             else:
                 current_time = int(time.time() - self.start_time)

@@ -376,6 +376,8 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
             # Game setup
             self.maze_levels = LEVELS
             self.maze = self.maze_levels[self.mode]
+            self.stop = False
+            self.finished = False
             
             # Canvas calculations
             self.HEIGHT = 600
@@ -481,10 +483,13 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
                 return
             
             self.stop = True  # Pause the game
+
+            if hasattr(self, 'timer_id'):
+                self.master.after_cancel(self.timer_id)
             
             # Store current game state
             self.paused_time = time.time() - self.start_time
-            
+
             # Create menu canvas with theme
             self.menu_canvas = Canvas(self.master, height=300, width=300, bg=self.themes["overlap"])
             self.menu_canvas.place(x=self.WIDTH/2, y=self.HEIGHT/2, anchor="center")
@@ -536,6 +541,8 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
                 self.finished = True
                 self.stop = True
                 self.maze_canvas = None
+                if hasattr(self, 'timer_id'):
+                    self.master.after_cancel(self.timer_id)
         
         def load_images(self):
             self.frameCnt = 2
@@ -689,6 +696,16 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
 
                     # Check if player reached the end
                     if [new_row, new_col] == self.end_pos:
+                        self.finished = True
+                        self.stop = True
+                        
+                        # Cancel the timer immediately
+                        if hasattr(self, 'timer_id'):
+                            try:
+                                self.master.after_cancel(self.timer_id)
+                            except:
+                                pass
+
                         self.end_time = time.time()
                         self.total_time = round(self.end_time - self.start_time)
                         score = int(self.score * 100) + ((150 - self.total_time) * 5)
@@ -777,37 +794,42 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
                 self.update_timer()
         
         def update_timer(self):
-            if self.maze_canvas is None:
+            # Check if game should stop
+            if self.maze_canvas is None or self.finished or self.stop:
                 return
-            elif self.finished == True:
-                return
-            elif self.stop == True:
-                return
-            else:
-                current_time = int(time.time() - self.start_time)
-                if current_time >= self.time_limit:  # If time exceeds max_time
-                    game_over_win = Toplevel(self.master)
-                    self.stop = True  # Stop the game
-                    self.finished = True  # Mark the game as finished
-                    game_over_win.title("Game Over")
-                    message = Label(
-                        game_over_win,
-                        text=f"Time's up!\nItems collected: {self.score}/{self.total_items}",
-                        font=('Arial', 16),
-                        pady=20,
-                        padx=20
-                    )
-                    message.pack()
+            
+            current_time = int(time.time() - self.start_time)
+            
+            if current_time >= self.time_limit:
+                self.stop = True
+                self.finished = True
+                
+                # Cancel any pending timer updates
+                if hasattr(self, 'timer_id'):
+                    self.master.after_cancel(self.timer_id)
+                
+                game_over_win = Toplevel(self.master)
+                game_over_win.title("Game Over")
+                
+                message = Label(
+                    game_over_win,
+                    text=f"Time's up!\nItems collected: {self.score}/{self.total_items}",
+                    font=('Arial', 16),
+                    pady=20,
+                    padx=20
+                )
+                message.pack()
 
-                    restart_button = Button(
-                        game_over_win,
-                        text="Play Again",
-                        command=lambda: [game_over_win.destroy(), self.start(self.master, self.mode, self.maze_canvas, self.selected_wall, self.selected_character, self.current_theme)]
-                    )
-                    restart_button.pack(pady=10)
-                else:
-                    self.maze_canvas.itemconfig(self.time_text, text=f"Time: {current_time} seconds")
-                    self.master.after(1000, self.update_timer)
+                restart_button = Button(
+                    game_over_win,
+                    text="Play Again",
+                    command=lambda: [game_over_win.destroy(), self.start(self.master, self.mode, self.maze_canvas, self.selected_wall, self.selected_character, self.current_theme)]
+                )
+                restart_button.pack(pady=10)
+            else:
+                self.maze_canvas.itemconfig(self.time_text, text=f"Time: {current_time} seconds")
+                # Store the timer ID so we can cancel it if needed
+                self.timer_id = self.master.after(1000, self.update_timer)
 
     class MultiplayerMazeGame:
         def __init__(self):

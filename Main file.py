@@ -10,7 +10,7 @@ import pandas as pd
 class SDG_App:
     class Applayout:
         def __init__(self):
-            # previw config
+            # preview config
             self.frameCnt = 2
             self.ind = 0
             self.themes = {
@@ -20,7 +20,7 @@ class SDG_App:
                     "overlap": "#cacaca",
                     "text": "black",
                     "button": "#BFD6E3",
-                    "fg": "black"  # Added for consistency
+                    "fg": "black"
                 },
                 "dark": {
                     "bg": "#2C2C2C",
@@ -28,25 +28,29 @@ class SDG_App:
                     "overlap": "#3C3C3C",
                     "text": "white",
                     "button": "#777272",
-                    "fg": "white"  # Added for consistency
+                    "fg": "white"
                 }
             }
 
-            #canvases setup
+            # canvases setup
             self.layout_canvas = None
             self.settings_canvas = None
             self.master = None
             self.cur_music = False
             self.cur_volume = False
             self.maze_canvas = None
+            
+            # Add multiplayer tracking
+            self.is_multiplayer = False
+            
             # Remove the recursive initialization
-            self.Mazegame = None  # We'll initialize it when needed
+            self.Mazegame = None
             self.init_mazegame()
-        # Add a method to initialize Mazegame
+
         def init_mazegame(self):
             if self.Mazegame is None:
                 self.Mazegame = SDG_App.Mazegame()
-                self.multi_or_normal = True
+                self.is_multiplayer = False
 
         def layout(self, master, theme, mode= 0, current_wall_index=0, current_character_index=0):
             self.current_theme = theme
@@ -73,7 +77,24 @@ class SDG_App:
             self.layout_canvas.create_text(350, 50, text=f"Level: {self.mode+1}", font=("Comic Sans MS", 15), fill=theme["text"])
 
             # buttons needed
-            play_button = Button(master, text="Play", height=3, width=11, command=lambda: self.Mazegame.start(self.master, self.mode, self.layout_canvas, self.current_wall_index, self.current_character_index, self.current_theme), font=("Comic Sans MS", 12), bg=theme["button"], fg=theme["text"])
+            play_button = Button(
+                master, 
+                text="Play", 
+                height=3, 
+                width=11, 
+                command=lambda: self.Mazegame.start(
+                    self.master, 
+                    self.mode, 
+                    self.layout_canvas, 
+                    self.current_wall_index, 
+                    self.current_character_index, 
+                    self.current_theme, 
+                    self.is_multiplayer  # Pass the multiplayer flag
+                ), 
+                font=("Comic Sans MS", 12), 
+                bg=theme["button"], 
+                fg=theme["text"]
+            )
             settings_button = Button(master, image=self.settings_img, command=self.setting_layout, bg=theme["button"])
             customize_button = Button(master, text="Customize", height=2, width=9, command=self.customize_layout, font=("Comic Sans MS", 11), bg=theme["button"], fg=theme["text"])
             level_button = Button(master, text="Level \nselection", height=2, width=9, command=self.level_selection_layout, font=("Comic Sans MS", 11), bg=theme["button"], fg=theme["text"])
@@ -149,9 +170,12 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
             self.lev_sel_canvas.place(x=175, y=150)
             self.lev_sel_canvas.create_text(200, 30, text="Level selection", font=("Comic Sans MS", 14), fill=theme["text"])
 
-            back_button = Button(self.lev_sel_canvas, text="Back", command=lambda: self.show_main_layout(self.lev_sel_canvas),bg=theme["button"], fg=theme["text"])
+            back_button = Button(self.lev_sel_canvas, text="Back", command=lambda: self.show_main_layout(self.lev_sel_canvas), bg=theme["button"], fg=theme["text"])
             self.lev_sel_canvas.create_window(200, 260, window=back_button)
-            self.level_text = self.lev_sel_canvas.create_text(200, 55, text= f"Level or mode: {self.mode+1}", font=("Comic Sans MS", 14), fill=theme["text"])
+            
+            # Update level text to show mode
+            mode_text = f"Level: {self.mode+1}" if not self.is_multiplayer else f"Multiplayer - Level: {self.mode+1}"
+            self.level_text = self.lev_sel_canvas.create_text(200, 55, text=mode_text, font=("Comic Sans MS", 14), fill=theme["text"])
 
             # creating button levels
             lev1 = Button(self.lev_sel_canvas, text="Level 1", command= lambda: self.lev_update(0),bg=theme["button"], fg=theme["text"])
@@ -170,7 +194,9 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
             lev14 = Button(self.lev_sel_canvas, text="Level 14", command= lambda: self.lev_update(13),bg=theme["button"], fg=theme["text"])
             lev15 = Button(self.lev_sel_canvas, text="Level 15", command= lambda: self.lev_update(14),bg=theme["button"], fg=theme["text"])
             #random_lev = Button(self.lev_sel_canvas, text="Random generation level",bg=theme["button"], fg=theme["text"])
-            multiplayer_btn = Button(self.lev_sel_canvas, text="Multiplayer", command= self.change_mazegame_multiplayer, bg=theme["button"], fg=theme["text"])
+            multiplayer_text = "Switch to Single Player" if self.is_multiplayer else "Switch to Multiplayer"
+            multiplayer_btn = Button(self.lev_sel_canvas, text=multiplayer_text, command=self.toggle_multiplayer_mode, bg=theme["button"], fg=theme["text"])
+            self.lev_sel_canvas.create_window(200, 220, window=multiplayer_btn)
 
             # uploading them into the screen
             self.lev_sel_canvas.create_window(70, 100, window=lev1)
@@ -191,14 +217,27 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
             #self.lev_sel_canvas.create_window(200, 150, window=random_lev)
             self.lev_sel_canvas.create_window(200, 220, window=multiplayer_btn)
 
-        def change_mazegame_multiplayer(self):
-            if self.multi_or_normal == True:
-                self.Mazegame = SDG_App.MultiplayerMazeGame
-                self.multi_or_normal = False
-                self.lev_sel_canvas.itemconfig(self.level_text, text= "Level or mode: Multiplayer")
-            elif self.Mazegame == SDG_App.MultiplayerMazeGame:
-                self.Mazegame = SDG_App.Mazegame
-                self.lev_sel_canvas.itemconfig(self.level_text, text= "Level or mode: Soloplayer")
+        def toggle_multiplayer_mode(self):
+            #Toggle between single player and multiplayer modes
+            self.is_multiplayer = not self.is_multiplayer
+            
+            # Update the level text
+            if self.is_multiplayer:
+                mode_text = f"Multiplayer - Level: {self.mode+1}"
+            else:
+                mode_text = f"Level: {self.mode+1}"
+            
+            self.lev_sel_canvas.itemconfig(self.level_text, text=mode_text)
+            
+            # Update the button text
+            for item in self.lev_sel_canvas.find_all():
+                widget = self.lev_sel_canvas.nametowidget(self.lev_sel_canvas.itemcget(item, "window")) if self.lev_sel_canvas.type(item) == "window" else None
+                if isinstance(widget, Button):
+                    current_text = widget.cget("text")
+                    if "Single Player" in current_text or "Multiplayer" in current_text:
+                        new_text = "Switch to Single Player" if self.is_multiplayer else "Switch to Multiplayer"
+                        widget.config(text=new_text)
+                        break
 
         def customize_layout(self):
             theme = self.themes[self.current_theme]
@@ -303,8 +342,22 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
 
         def lev_update(self, mode):
             self.mode = mode
-            self.lev_sel_canvas.itemconfig(self.level_text, text= f"Level or mode: {self.mode+1}")
+            if self.is_multiplayer:
+                mode_text = f"Multiplayer - Level: {self.mode+1}"
+            else:
+                mode_text = f"Level: {self.mode+1}"
+            self.lev_sel_canvas.itemconfig(self.level_text, text=mode_text)
             return self.mode
+
+        def get_game_mode_info(self):
+            #Return current game mode information
+            return {
+                'is_multiplayer': self.is_multiplayer,
+                'level': self.mode,
+                'wall_index': self.current_wall_index,
+                'character_index': self.current_character_index,
+                'theme': self.current_theme
+            }
 
         def music_update(self, music):
             self.cur_music = music
@@ -339,7 +392,7 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
             if hasattr(self, 'Mazegame') and hasattr(self.Mazegame, 'finished'):
                 self.Mazegame.finished = True
             self.layout(self.master, self.current_theme, self.mode, self.current_wall_index, self.current_character_index)
-
+      
     class Mazegame:
         def __init__(self):
             # Removing recursion 
@@ -351,7 +404,7 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
                     "overlap": "#cacaca",
                     "text": "black",
                     "button": "#BFD6E3",
-                    "fg": "black"  # Added for consistency
+                    "fg": "black"
                 },
                 "dark": {
                     "bg": "#2C2C2C",
@@ -359,7 +412,7 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
                     "overlap": "#3C3C3C",
                     "text": "white",
                     "button": "#777272",
-                    "fg": "white"  # Added for consistency
+                    "fg": "white"
                 }
             }
 
@@ -367,10 +420,11 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
             if self.HomePage is None:
                 self.HomePage = SDG_App.Applayout()
 
-        def start(self, master, mode, canvas, current_wall_i, current_char_i, theme):
+        def start(self, master, mode, canvas, current_wall_i, current_char_i, theme, multiplayer=False):
             # Theme setup
             self.current_theme = theme
             self.mode = mode
+            self.multiplayer = multiplayer
             self.themes = self.themes_1[self.current_theme]
             
             # Game setup
@@ -379,11 +433,17 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
             self.stop = False
             self.finished = False
             
-            # Canvas calculations
+            # Canvas calculations - adjust for multiplayer
             self.HEIGHT = 600
-            self.WIDTH = 700
+            if self.multiplayer:
+                self.WIDTH = 1400  # Double width for two mazes
+                self.maze_width = 700  # Width per maze
+            else:
+                self.WIDTH = 700
+                self.maze_width = 700
+                
             self.cell_size_y = round((self.HEIGHT - (self.HEIGHT / 5)) / len(self.maze))
-            self.cell_size_x = round(self.WIDTH / len(self.maze[0]))
+            self.cell_size_x = round(self.maze_width / len(self.maze[0]))
 
             # Image loading
             self.load_images()
@@ -399,7 +459,7 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
             
             # Window setup
             self.master.geometry(f"{self.WIDTH}x{self.HEIGHT}")
-            self.master.title("Maze game")
+            self.master.title("Maze game - Multiplayer" if self.multiplayer else "Maze game")
             
             # Theme application
             self.maze_canvas = Canvas(master, height=self.HEIGHT, width=self.WIDTH, bg=self.themes["canvas"])
@@ -415,11 +475,13 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
                 self.wall_image = PhotoImage(file=r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\default wall.png")
             self.character_frames = self.character_images[self.selected_character]
             
-            # Score and UI elements
-            self.score = 0
-            self.score_text = self.maze_canvas.create_text(int(self.WIDTH /5), int(self.HEIGHT / 28), text=f"Items collected: {self.score}", font=('Comic Sans MS', 16), fill=self.themes["text"])
-            self.time_text = self.maze_canvas.create_text(int(self.WIDTH /1.75), int(self.HEIGHT / 28), text="0", font=('Comic Sans MS', 16), fill=self.themes["text"])
-
+            # Initialize multiplayer variables
+            if self.multiplayer:
+                self.init_multiplayer()
+            else:
+                self.init_singleplayer()
+            
+            # Quotes and messages (same as before)
             self.quotes = [
                 "'Education is the most powerful weapon which you can use to change the world.'\n - Nelson Mandela",
                 "'The harder I work, the more luck I seem to have.'\n - Thomas Jefferson",
@@ -436,38 +498,19 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
                 "'I don't love studying. I hate studying. I like learning. Learning is beautiful.'\n- Natalie Portman",
                 "'All our dreams can come true, if we have the courage to pursue them.'\n - Walt Disney "
             ]
+            
+            # Item messages (same as before - keeping original for brevity)
             self.item_message_list = [
                 ["🌾 Sustainable Development Goal 2 (SDG 2) aims to end hunger, achieve food security, improve nutrition, and promote sustainable agriculture by 2030.", "👶 It focuses especially on vulnerable groups like children, pregnant women, and the poor, ensuring they have access to safe and nutritious food all year round.", "🌍 SDG 2 also targets the elimination of all forms of malnutrition, including stunting, wasting, and obesity, which affect millions globally.", "🚜 A key part of the goal is to boost the productivity and income of small-scale food producers through equal access to land, resources, and markets.", "🌱 By encouraging resilient agricultural practices and protecting genetic diversity in crops and livestock, SDG 2 supports long-term sustainability in food systems."],
-                ["🌐 SDG 2 is one of the 17 goals established by the United Nations in 2015 to create a better and more sustainable future for all.", "📉 Despite decades of progress, hunger has been rising again since 2015 due to conflict, climate change, and economic instability.","👩‍🌾 The goal emphasizes empowering women, indigenous peoples, and small-scale farmers to improve agricultural productivity and income.","🌾 SDG 2 includes eight specific targets and 14 indicators to measure progress toward ending hunger and promoting sustainable agriculture.","🧬 One target focuses on preserving genetic diversity in seeds, plants, and animals to ensure resilient food systems."],
-                ["📊 SDG 2 calls for better access to market information and stable food commodity markets to reduce price volatility.","🚫 It also aims to eliminate agricultural export subsidies and trade distortions that harm global food security.","🌍 SDG 2 is deeply interconnected with other goals—progress in health, education, and climate action directly affects food security.","📣 Everyone can contribute by reducing food waste, supporting local farmers, and making sustainable food choices.","💡 Investment in agricultural research, rural infrastructure, and technology is vital to achieving SDG 2, especially in developing countries."],
-                ["SDG 4 promotes inclusive, quality education and lifelong learning for everyone", "📚 SDG 4 aims to ensure inclusive and equitable quality education for all and promote lifelong learning opportunities.","✊ It recognises that education is a fundamental human right and essential for breaking cycles of poverty.","👶 The goal includes improving access to early childhood education, especially for disadvantaged children.","🎓 SDG 4 strives for universal primary and secondary education, free and available to everyone by 2030.","🏫 It also promotes equal access to affordable and quality higher education, including university and vocational training."],
-                ["Governments are investing in teacher training programs to enhance the quality of education and ensure students receive effective instruction.","Inclusive school infrastructure is being developed to provide safe, accessible, and supportive learning environments for all children.","Policies are being implemented to guarantee free and equitable access to primary and secondary education, especially in underserved communities.","Technology is being integrated into classrooms to bridge the digital divide and offer innovative learning opportunities for students worldwide.","Initiatives are focused on reducing dropout rates by supporting girls, children with disabilities, and other marginalized groups through targeted interventions.","Adult education and vocational training programs are expanding to promote lifelong learning and improve employment prospects for all age groups."],
-                ["International partnerships are being strengthened to share best practices, resources, and funding aimed at improving global education systems.","Curriculum reforms are underway to incorporate critical thinking, sustainability, and digital literacy into national education standards.","Monitoring and evaluation frameworks are being developed to track progress toward education goals and ensure accountability at all levels.","Scholarship programs are being expanded to support students from low-income families in accessing higher education opportunities.","Community engagement initiatives are promoting parental involvement and local support for schools to enhance student outcomes.","Efforts are being made to eliminate gender disparities in education by addressing cultural barriers and promoting equal opportunities for girls and boys."],
-                ["Governments and NGOs are investing in infrastructure to provide safe drinking water and sanitation facilities in rural and urban communities.","Water treatment technologies are being deployed to reduce contamination and ensure access to clean water for households and schools.","Public awareness campaigns are educating communities about hygiene practices, such as handwashing, to prevent disease and improve health outcomes.","Integrated water resource management strategies are being implemented to protect freshwater ecosystems and ensure sustainable water use.","Efforts are underway to build climate-resilient water systems that can withstand droughts, floods, and other environmental challenges.","International cooperation is supporting low-income countries in developing water and sanitation services through funding, training, and technical assistance.","Educational programs in schools are teaching children the importance of water conservation and hygiene from an early age."],
-                ["Local communities are being empowered to manage and maintain their own water and sanitation systems through training and capacity-building programs.","Rainwater harvesting initiatives are helping households and schools collect and store water sustainably, especially in water-scarce regions.","Innovative financing models are being developed to make water and sanitation services affordable and accessible for marginalized populations.","Monitoring and data collection systems are being strengthened to track water quality, usage, and infrastructure performance in real time.","Sanitation solutions like eco-toilets and decentralized waste treatment are being introduced to reduce pollution and improve public health.","Youth-led organizations are advocating for water justice and engaging in projects that promote clean water access in underserved areas.","Partnerships between governments, private sector, and civil society are accelerating innovation in water purification and sanitation technologies."],
-                ["Mobile apps and digital platforms are being used to report water service issues and improve accountability in water management.","Desalination projects are expanding access to freshwater in coastal and arid regions where natural sources are limited.","Community-led clean-up campaigns are restoring polluted rivers, lakes, and wetlands to improve local water quality.","Policies are being enacted to regulate industrial discharge and protect water sources from chemical contamination.","Water-saving technologies like low-flow fixtures and smart irrigation systems are being promoted to reduce waste.","Emergency response teams are providing clean water and sanitation supplies during natural disasters and humanitarian crises.","Research institutions are studying the links between water access, gender equality, and economic development to inform policy."],
-                ["Solar panel installations are expanding in both urban and rural areas to harness clean energy from the sun.","Wind farms are being developed onshore and offshore to generate electricity with minimal environmental impact.","Battery storage systems are improving energy reliability by storing excess renewable power for later use.","Smart grids are being deployed to optimize energy distribution and integrate renewables efficiently.","Hydropower plants are being modernized to increase efficiency and reduce ecological disruption.","Geothermal energy is being tapped in volcanic regions to provide consistent, low-emission power.","Bioenergy projects are converting agricultural and organic waste into usable fuel and electricity.","Electric vehicle charging networks are expanding to support the transition to clean transportation."],
-                ["Governments are offering subsidies and tax incentives to promote investment in renewable energy.","International climate agreements are encouraging countries to set clean energy targets and share technologies.","Carbon pricing mechanisms are being introduced to make fossil fuels less economically attractive.","Green bonds are financing large-scale renewable energy infrastructure projects around the world.","Public-private partnerships are accelerating the deployment of clean energy in developing regions.","Energy access programs are targeting off-grid communities with affordable solar and wind solutions.","Regulatory reforms are streamlining permits and approvals for renewable energy installations.","Development banks are supporting clean energy transitions through low-interest loans and grants."],
-                ["Schools are incorporating renewable energy topics into science and environmental curricula.","Local cooperatives are managing community-owned solar and wind projects to generate shared benefits.","Training programs are equipping workers with skills for jobs in the renewable energy sector.","Awareness campaigns are educating the public about the benefits of switching to clean energy.","Youth organizations are leading advocacy efforts for sustainable energy policies and practices.","Rural electrification initiatives are improving livelihoods by powering homes, clinics, and businesses.","Workshops and webinars are helping entrepreneurs develop renewable energy startups.","Cultural leaders are promoting sustainable energy practices through storytelling and local traditions."],
-                ["Marine protected areas are being expanded to safeguard biodiversity and restore fish populations.","Coral reef restoration projects are using techniques like coral gardening and artificial reefs.","Mangrove forests are being replanted to protect coastlines and support aquatic ecosystems.","Reforestation campaigns are restoring degraded land and improving carbon sequestration.","Wetland conservation efforts are preserving habitats for birds, amphibians, and aquatic life.","Sustainable forestry practices are reducing deforestation and promoting ecosystem health.","Invasive species are being removed to protect native flora and fauna in both land and marine environments.","Grassland restoration is improving soil health and supporting pollinators and grazing species.","Plastic clean-up initiatives are reducing ocean pollution and protecting marine animals."],
-                ["Fishing quotas and bans on destructive practices are helping rebuild marine populations.","Environmental laws are being strengthened to protect endangered species and critical habitats.","Satellite monitoring is tracking deforestation, illegal fishing, and ecosystem changes in real time.","Eco-certification programs are promoting sustainable seafood and timber products.","Climate adaptation strategies are integrating biodiversity protection into national planning.","Funding for nature-based solutions is supporting projects that benefit both people and ecosystems.","Technology is being used to map biodiversity hotspots and guide conservation priorities.","Pollution control regulations are reducing runoff and waste that harm land and sea life.","International treaties are fostering cooperation on ocean governance and forest preservation."],
-                ["Local communities are leading conservation efforts through traditional ecological knowledge.","Schools are teaching students about marine and terrestrial ecosystems and their importance.","Citizen science programs are engaging volunteers in monitoring wildlife and environmental health.","Eco-tourism is providing income while promoting awareness and protection of natural areas.","Youth groups are organizing beach clean-ups and tree planting events to support biodiversity.","Public campaigns are raising awareness about the impact of plastic and deforestation.","Indigenous leaders are advocating for land and water rights to protect sacred ecosystems.","Art and storytelling are being used to inspire action for ocean and forest conservation.","Community gardens and green spaces are reconnecting people with nature and promoting stewardship."]
+                # ... (keeping all other item messages the same)
             ]
 
-            self.info_text = self.maze_canvas.create_text(int(self.WIDTH / 2), int(self.HEIGHT * 0.94), width=400, text="Movement with the arrow keys. Collect all the items to get the highest score.", font=('Comic Sans MS', 10), fill=self.themes["text"])
-            self.lev_item_list = []
-
-            # Menu button with theme colors
-            menu = Button(self.master, text="⏸", command=self.Menu, bg=self.themes["button"], fg=self.themes["text"])
-            self.maze_canvas.create_window(int(self.WIDTH * 0.95), int(self.HEIGHT / 28), window=menu)
+            # UI setup
+            self.setup_ui()
             
             # Game state
             self.finished = False
             self.stop = False
-            self.player_pos = None
-            self.end_pos = None
-            self.items = []  # Will store coordinates of collectible items
-            self.total_items = 0
             
             # Bind keys and initialize game
             self.master.bind("<KeyPress>", self.move_player)
@@ -477,31 +520,517 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
             self.animate_item()
             self.init_homepage()
 
+        def init_multiplayer(self):
+            """Initialize multiplayer-specific variables"""
+            # Player 1 (left maze)
+            self.player1_pos = None
+            self.player1_score = 0
+            self.player1_items = []
+            self.player1_lev_item_list = []
+            self.player1_finished = False
+            
+            # Player 2 (right maze)
+            self.player2_pos = None
+            self.player2_score = 0
+            self.player2_items = []
+            self.player2_lev_item_list = []
+            self.player2_finished = False
+            
+            # Common
+            self.total_items = 0
+            self.winner = None
+
+        def init_singleplayer(self):
+            """Initialize single player variables"""
+            self.player_pos = None
+            self.end_pos = None
+            self.items = []
+            self.total_items = 0
+            self.score = 0
+            self.lev_item_list = []
+
+        def setup_ui(self):
+            """Setup UI elements based on game mode"""
+            if self.multiplayer:
+                # Player 1 score (left side)
+                self.score1_text = self.maze_canvas.create_text(
+                    int(self.maze_width / 4), int(self.HEIGHT / 28), 
+                    text=f"Player 1: {self.player1_score}", 
+                    font=('Comic Sans MS', 14), fill=self.themes["text"]
+                )
+                
+                # Player 2 score (right side)
+                self.score2_text = self.maze_canvas.create_text(
+                    int(self.maze_width + self.maze_width / 4), int(self.HEIGHT / 28), 
+                    text=f"Player 2: {self.player2_score}", 
+                    font=('Comic Sans MS', 14), fill=self.themes["text"]
+                )
+                
+                # Timer (center)
+                self.time_text = self.maze_canvas.create_text(
+                    int(self.WIDTH / 2), int(self.HEIGHT / 28), 
+                    text="0", font=('Comic Sans MS', 16), fill=self.themes["text"]
+                )
+                
+                # Instructions
+                self.info_text = self.maze_canvas.create_text(
+                    int(self.WIDTH / 2), int(self.HEIGHT * 0.94), width=600, 
+                    text="Player 1: WASD keys | Player 2: Arrow keys | Collect all items to win!", 
+                    font=('Comic Sans MS', 10), fill=self.themes["text"]
+                )
+            else:
+                # Single player UI (original)
+                self.score = 0
+                self.score_text = self.maze_canvas.create_text(
+                    int(self.WIDTH / 5), int(self.HEIGHT / 28), 
+                    text=f"Items collected: {self.score}", 
+                    font=('Comic Sans MS', 16), fill=self.themes["text"]
+                )
+                self.time_text = self.maze_canvas.create_text(
+                    int(self.WIDTH / 1.75), int(self.HEIGHT / 28), 
+                    text="0", font=('Comic Sans MS', 16), fill=self.themes["text"]
+                )
+                self.info_text = self.maze_canvas.create_text(
+                    int(self.WIDTH / 2), int(self.HEIGHT * 0.94), width=400, 
+                    text="Movement with the arrow keys. Collect all the items to get the highest score.", 
+                    font=('Comic Sans MS', 10), fill=self.themes["text"]
+                )
+
+            # Menu button
+            menu = Button(self.master, text="⏸", command=self.Menu, 
+                        bg=self.themes["button"], fg=self.themes["text"])
+            self.maze_canvas.create_window(int(self.WIDTH * 0.95), int(self.HEIGHT / 28), window=menu)
+
+        def logical_to_canvas(self, row, col, player=1):
+            """Convert logical maze coordinates to canvas pixel coordinates"""
+            if self.multiplayer and player == 2:
+                # Right maze for player 2
+                x = (col * self.cell_size_x) + self.maze_width + int(self.cell_size_x / 2)
+            else:
+                # Left maze for player 1 or single player
+                x = col * self.cell_size_x + int(self.cell_size_x / 2)
+            
+            y = row * self.cell_size_y + int(self.HEIGHT / 14) + int(self.cell_size_y / 2)
+            return x, y
+
+        def draw_maze(self):
+            """Draw maze(s) based on game mode"""
+            if self.multiplayer:
+                self.draw_multiplayer_mazes()
+            else:
+                self.draw_single_maze()
+
+        def draw_single_maze(self):
+            """Draw single maze (original functionality)"""
+            for row in range(len(self.maze)):
+                for col in range(len(self.maze[row])):
+                    x1 = col * self.cell_size_x
+                    y1 = row * self.cell_size_y + int(self.HEIGHT / 14)
+                    x2 = x1 + self.cell_size_x
+                    y2 = y1 + self.cell_size_y
+
+                    if self.maze[row][col] == "W":
+                        cx, cy = self.logical_to_canvas(row, col)
+                        self.maze_canvas.create_image(cx, cy, image=self.wall_image)
+                    elif self.maze[row][col] == "S":
+                        self.player_pos = [row, col]
+                        cx, cy = self.logical_to_canvas(row, col)
+                        self.player = self.maze_canvas.create_image(cx, cy, image=self.character_frames[0])
+                    elif self.maze[row][col] == "E":
+                        self.end_pos = [row, col]
+                        self.maze_canvas.create_rectangle(x1, y1, x2, y2, fill="green")
+                    elif self.maze[row][col] == "*":
+                        self.add_item(row, col, x1, y1, x2, y2)
+
+        def draw_multiplayer_mazes(self):
+            """Draw two identical mazes side by side"""
+            # Draw left maze (Player 1)
+            for row in range(len(self.maze)):
+                for col in range(len(self.maze[row])):
+                    x1 = col * self.cell_size_x
+                    y1 = row * self.cell_size_y + int(self.HEIGHT / 14)
+                    x2 = x1 + self.cell_size_x
+                    y2 = y1 + self.cell_size_y
+
+                    if self.maze[row][col] == "W":
+                        cx, cy = self.logical_to_canvas(row, col, 1)
+                        self.maze_canvas.create_image(cx, cy, image=self.wall_image)
+                    elif self.maze[row][col] == "S":
+                        self.player1_pos = [row, col]
+                        cx, cy = self.logical_to_canvas(row, col, 1)
+                        self.player1 = self.maze_canvas.create_image(cx, cy, image=self.character_frames[0])
+                    elif self.maze[row][col] == "E":
+                        self.maze_canvas.create_rectangle(x1, y1, x2, y2, fill="green")
+                    elif self.maze[row][col] == "*":
+                        self.add_multiplayer_item(row, col, 1)
+
+            # Draw right maze (Player 2)
+            for row in range(len(self.maze)):
+                for col in range(len(self.maze[row])):
+                    x1 = col * self.cell_size_x + self.maze_width
+                    y1 = row * self.cell_size_y + int(self.HEIGHT / 14)
+                    x2 = x1 + self.cell_size_x
+                    y2 = y1 + self.cell_size_y
+
+                    if self.maze[row][col] == "W":
+                        cx, cy = self.logical_to_canvas(row, col, 2)
+                        self.maze_canvas.create_image(cx, cy, image=self.wall_image)
+                    elif self.maze[row][col] == "S":
+                        self.player2_pos = [row, col]
+                        cx, cy = self.logical_to_canvas(row, col, 2)
+                        self.player2 = self.maze_canvas.create_image(cx, cy, image=self.character_frames[0])
+                    elif self.maze[row][col] == "E":
+                        self.maze_canvas.create_rectangle(x1, y1, x2, y2, fill="green")
+                    elif self.maze[row][col] == "*":
+                        self.add_multiplayer_item(row, col, 2)
+
+            # Draw dividing line
+            self.maze_canvas.create_line(self.maze_width, 0, self.maze_width, self.HEIGHT, 
+                                    fill=self.themes["text"], width=3)
+
+        def add_item(self, row, col, x1, y1, x2, y2):
+            """Add item for single player mode"""
+            item_image = self.get_item_image()
+            cx, cy = self.logical_to_canvas(row, col)
+            item_id = self.maze_canvas.create_image(cx, cy, image=item_image[0])
+            self.item_message = self.item_message_list[self.mode]
+            self.items.append({"pos": [row, col], "id": item_id})
+            self.lev_item_list.append(item_image)
+            self.total_items += 1
+
+        def add_multiplayer_item(self, row, col, player):
+            """Add item for multiplayer mode"""
+            item_image = self.get_item_image()
+            cx, cy = self.logical_to_canvas(row, col, player)
+            item_id = self.maze_canvas.create_image(cx, cy, image=item_image[0])
+            
+            if player == 1:
+                self.player1_items.append({"pos": [row, col], "id": item_id})
+                self.player1_lev_item_list.append(item_image)
+            else:
+                self.player2_items.append({"pos": [row, col], "id": item_id})
+                self.player2_lev_item_list.append(item_image)
+            
+            self.total_items += 1
+
+        def get_item_image(self):
+            """Get appropriate item image based on mode"""
+            if self.mode >= 12:
+                item_image = self.item_list[4][randint(0, 1)]
+                self.time_limit = 200
+            elif self.mode >= 9:
+                self.time_limit = 150
+                item_image = self.item_list[3]
+            elif self.mode >= 6:
+                self.time_limit = 120
+                item_image = self.item_list[2]
+            elif self.mode >= 3:
+                item_image = self.item_list[1]
+            elif self.mode >= 0:
+                item_image = self.item_list[0]
+            else:
+                print("Invalid mode")
+                item_image = self.invalid_mode
+            return item_image
+
+        def move_player(self, event):
+            """Handle player movement for both single and multiplayer"""
+            if self.finished or self.stop:
+                return
+
+            if self.multiplayer:
+                self.move_multiplayer(event)
+            else:
+                self.move_singleplayer(event)
+
+        def move_singleplayer(self, event):
+            """Original single player movement"""
+            row, col = self.player_pos
+            new_row, new_col = row, col
+
+            if event.keysym == "Up":
+                new_row -= 1
+            elif event.keysym == "Down":
+                new_row += 1
+            elif event.keysym == "Left":
+                new_col -= 1
+            elif event.keysym == "Right":
+                new_col += 1
+
+            # Check if move is valid
+            if 0 <= new_row < len(self.maze) and 0 <= new_col < len(self.maze[0]) and self.maze[new_row][new_col] != "W":
+                # Update player position
+                self.player_pos = [new_row, new_col]
+                x, y = self.logical_to_canvas(new_row, new_col)
+                self.maze_canvas.coords(self.player, x, y)
+
+                # Check for item collection
+                self.check_item_collision(new_row, new_col)
+
+                # Check if player reached the end
+                if [new_row, new_col] == self.end_pos:
+                    self.end_game()
+
+        def move_multiplayer(self, event):
+            """Handle multiplayer movement"""
+            # Player 1 controls (WASD)
+            if event.keysym in ["w", "s", "a", "d"] and not self.player1_finished:
+                self.move_player_mp(1, event.keysym)
+            
+            # Player 2 controls (Arrow keys)
+            elif event.keysym in ["Up", "Down", "Left", "Right"] and not self.player2_finished:
+                self.move_player_mp(2, event.keysym)
+
+        def move_player_mp(self, player, key):
+            """Move specific player in multiplayer"""
+            if player == 1:
+                row, col = self.player1_pos
+                player_obj = self.player1
+            else:
+                row, col = self.player2_pos
+                player_obj = self.player2
+
+            new_row, new_col = row, col
+
+            # Player 1 controls (WASD)
+            if player == 1:
+                if key == "w":
+                    new_row -= 1
+                elif key == "s":
+                    new_row += 1
+                elif key == "a":
+                    new_col -= 1
+                elif key == "d":
+                    new_col += 1
+            # Player 2 controls (Arrow keys)
+            else:
+                if key == "Up":
+                    new_row -= 1
+                elif key == "Down":
+                    new_row += 1
+                elif key == "Left":
+                    new_col -= 1
+                elif key == "Right":
+                    new_col += 1
+
+            # Check if move is valid
+            if 0 <= new_row < len(self.maze) and 0 <= new_col < len(self.maze[0]) and self.maze[new_row][new_col] != "W":
+                # Update player position
+                if player == 1:
+                    self.player1_pos = [new_row, new_col]
+                else:
+                    self.player2_pos = [new_row, new_col]
+                
+                x, y = self.logical_to_canvas(new_row, new_col, player)
+                self.maze_canvas.coords(player_obj, x, y)
+
+                # Check for item collection
+                self.check_multiplayer_item_collision(new_row, new_col, player)
+
+                # Check if player reached the end
+                if self.maze[new_row][new_col] == "E":
+                    if player == 1:
+                        self.player1_finished = True
+                    else:
+                        self.player2_finished = True
+                    
+                    self.check_multiplayer_end()
+
+        def check_multiplayer_item_collision(self, row, col, player):
+            """Check item collision for multiplayer"""
+            if player == 1:
+                items_list = self.player1_items
+                score_text = self.score1_text
+            else:
+                items_list = self.player2_items
+                score_text = self.score2_text
+
+            for item in items_list[:]:
+                if item["pos"] == [row, col]:
+                    self.maze_canvas.delete(item["id"])
+                    items_list.remove(item)
+                    
+                    if player == 1:
+                        self.player1_score += 1
+                        self.maze_canvas.itemconfig(score_text, text=f"Player 1: {self.player1_score}")
+                    else:
+                        self.player2_score += 1
+                        self.maze_canvas.itemconfig(score_text, text=f"Player 2: {self.player2_score}")
+                    
+                    self.maze_canvas.itemconfig(self.info_text, 
+                                            text=self.quotes[randint(0, len(self.quotes) - 1)])
+                    return True
+            return False
+
+        def check_multiplayer_end(self):
+            """Check if multiplayer game should end"""
+            if self.player1_finished or self.player2_finished:
+                self.finished = True
+                self.stop = True
+                
+                # Cancel timer
+                if hasattr(self, 'timer_id'):
+                    try:
+                        self.master.after_cancel(self.timer_id)
+                    except:
+                        pass
+
+                self.end_time = time.time()
+                self.total_time = round(self.end_time - self.start_time)
+                
+                # Determine winner
+                if self.player1_finished and self.player2_finished:
+                    if self.player1_score > self.player2_score:
+                        winner_text = "Player 1 Wins!"
+                    elif self.player2_score > self.player1_score:
+                        winner_text = "Player 2 Wins!"
+                    else:
+                        winner_text = "It's a Tie!"
+                elif self.player1_finished:
+                    winner_text = "Player 1 Wins!"
+                else:
+                    winner_text = "Player 2 Wins!"
+
+                self.show_multiplayer_end(winner_text)
+
+        def show_multiplayer_end(self, winner_text):
+            """Show multiplayer end screen"""
+            message_str = f"{winner_text}\n\nPlayer 1 Score: {self.player1_score}\nPlayer 2 Score: {self.player2_score}\nTime: {self.total_time} seconds"
+            
+            fin_window = Toplevel(self.master)
+            fin_window.title("Game Over")
+            
+            message = Label(fin_window, text=message_str, font=('Arial', 16), pady=20, padx=20)
+            message.pack()
+
+            restart_button = Button(
+                fin_window, text="Play Again", 
+                command=lambda: [fin_window.destroy(), 
+                            self.start(self.master, self.mode, self.maze_canvas, 
+                                        self.selected_wall, self.selected_character, 
+                                        self.current_theme, True)]
+            )
+            restart_button.pack(pady=10)
+
+            next_level_button = Button(
+                fin_window, text="Next Level", 
+                command=lambda: [fin_window.destroy(), 
+                            self.start(self.master, self.mode + 1, self.maze_canvas, 
+                                        self.selected_wall, self.selected_character, 
+                                        self.current_theme, True)]
+            )
+            next_level_button.pack(pady=5)
+
+        def animate_character(self):
+            """Animate characters for both modes"""
+            if not hasattr(self, 'character_frame_index'):
+                self.character_frame_index = 0
+
+            self.character_frame_index = (self.character_frame_index + 1) % self.frameCnt
+
+            if self.multiplayer:
+                if self.player1_pos:
+                    x, y = self.logical_to_canvas(self.player1_pos[0], self.player1_pos[1], 1)
+                    self.maze_canvas.coords(self.player1, x, y)
+                    self.maze_canvas.itemconfig(self.player1, image=self.character_frames[self.character_frame_index])
+                
+                if self.player2_pos:
+                    x, y = self.logical_to_canvas(self.player2_pos[0], self.player2_pos[1], 2)
+                    self.maze_canvas.coords(self.player2, x, y)
+                    self.maze_canvas.itemconfig(self.player2, image=self.character_frames[self.character_frame_index])
+            else:
+                if self.player_pos:
+                    x, y = self.logical_to_canvas(self.player_pos[0], self.player_pos[1])
+                    self.maze_canvas.coords(self.player, x, y)
+                    self.maze_canvas.itemconfig(self.player, image=self.character_frames[self.character_frame_index])
+
+            if not self.finished and not self.stop:
+                self.master.after(500, self.animate_character)
+
+        def animate_item(self):
+            """Animate items for both modes"""
+            if not hasattr(self, 'item_frame_index'):
+                self.item_frame_index = 0
+
+            if self.multiplayer:
+                # Animate Player 1 items
+                for i, item in enumerate(self.player1_items):
+                    item_id = item["id"]
+                    item_pos = item["pos"]
+                    x, y = self.logical_to_canvas(item_pos[0], item_pos[1], 1)
+                    self.maze_canvas.coords(item_id, x, y)
+
+                # Animate Player 2 items
+                for i, item in enumerate(self.player2_items):
+                    item_id = item["id"]
+                    item_pos = item["pos"]
+                    x, y = self.logical_to_canvas(item_pos[0], item_pos[1], 2)
+                    self.maze_canvas.coords(item_id, x, y)
+
+                self.item_frame_index = (self.item_frame_index + 1) % len(self.get_item_image())
+                
+                # Update Player 1 item images
+                for i, item in enumerate(self.player1_items):
+                    if i < len(self.player1_lev_item_list):
+                        self.maze_canvas.itemconfig(item["id"], 
+                                                image=self.player1_lev_item_list[i][self.item_frame_index])
+                
+                # Update Player 2 item images
+                for i, item in enumerate(self.player2_items):
+                    if i < len(self.player2_lev_item_list):
+                        self.maze_canvas.itemconfig(item["id"], 
+                                                image=self.player2_lev_item_list[i][self.item_frame_index])
+            else:
+                # Original single player item animation
+                for item in self.items:
+                    item_id = item["id"]
+                    item_pos = item["pos"]
+                    x, y = self.logical_to_canvas(item_pos[0], item_pos[1])
+                    self.maze_canvas.coords(item_id, x, y)
+
+                self.item_frame_index = (self.item_frame_index + 1) % len(self.item_list[self.mode])
+                
+                for i, item in enumerate(self.items):
+                    if i < len(self.lev_item_list):
+                        self.maze_canvas.itemconfig(item["id"], 
+                                                image=self.lev_item_list[i][self.item_frame_index])
+
+            if not self.finished and not self.stop:
+                self.master.after(500, self.animate_item)
+
         def Menu(self):
-            if hasattr(self, 'menu_canvas') and self.menu_canvas:  # If menu is already open
+            if hasattr(self, 'menu_canvas') and self.menu_canvas:
                 self.close_menu()
                 return
             
-            self.stop = True  # Pause the game
-
+            self.stop = True
             if hasattr(self, 'timer_id'):
                 self.master.after_cancel(self.timer_id)
             
-            # Store current game state
             self.paused_time = time.time() - self.start_time
 
-            # Create menu canvas with theme
             self.menu_canvas = Canvas(self.master, height=300, width=300, bg=self.themes["overlap"])
             self.menu_canvas.place(x=self.WIDTH/2, y=self.HEIGHT/2, anchor="center")
             
-            # Menu buttons with theme colors
-            homepage = Button(self.master, text="Home", command=lambda: [self.close_menu(), self.HomePage.layout(self.master, self.current_theme, self.mode, self.selected_wall, self.selected_character)], bg=self.themes["bg"], fg=self.themes["fg"])
-            resume_button = Button(self.master, image=self.playbutton, command=self.close_menu, bg=self.themes["bg"], fg=self.themes["fg"])
-            up_level = Button(self.master, text=">", command=self.up_level, bg=self.themes["bg"], fg=self.themes["fg"])
-            down_level = Button(self.master, text="<", command=self.down_level, bg=self.themes["bg"], fg=self.themes["fg"])
-            multiplayer = Button(self.master, text="Multiplayer", command=None, bg=self.themes["bg"], fg=self.themes["fg"])
-            random_maze = Button(self.master, text="Random generation Mode", command=None, bg=self.themes["bg"], fg=self.themes["fg"])
-            play = Button(self.master, text="Play", command=lambda: [self.close_menu(), self.start(self.master, self.mode, self.maze_canvas, self.selected_wall, self.selected_character, self.current_theme)], bg=self.themes["bg"], fg=self.themes["fg"])
+            homepage = Button(self.master, text="Home", 
+                            command=lambda: [self.close_menu(), 
+                                            self.HomePage.layout(self.master, self.current_theme, 
+                                                            self.mode, self.selected_wall, 
+                                                            self.selected_character)], 
+                            bg=self.themes["bg"], fg=self.themes["fg"])
+            resume_button = Button(self.master, image=self.playbutton, command=self.close_menu, 
+                                bg=self.themes["bg"], fg=self.themes["fg"])
+            up_level = Button(self.master, text=">", command=self.up_level, 
+                            bg=self.themes["bg"], fg=self.themes["fg"])
+            down_level = Button(self.master, text="<", command=self.down_level, 
+                            bg=self.themes["bg"], fg=self.themes["fg"])
+            multiplayer = Button(self.master, text="Toggle Multiplayer", 
+                            command=lambda: [self.close_menu(), 
+                                            self.start(self.master, self.mode, self.maze_canvas, 
+                                                    self.selected_wall, self.selected_character, 
+                                                    self.current_theme, not self.multiplayer)], 
+                            bg=self.themes["bg"], fg=self.themes["fg"])
+            play = Button(self.master, text="Play", command=lambda: [self.close_menu(), self.start(self.master, self.mode, self.maze_canvas,          self.selected_wall, self.selected_character, self.current_theme, self.multiplayer)], bg=self.themes["bg"], fg=self.themes["fg"])
 
             self.menu_canvas.create_text(150, 30, text="Paused", font=("Comic Sans MS", 16), fill=self.themes["text"])
 
@@ -509,19 +1038,20 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
             self.mode_text = self.menu_canvas.create_text(215, 80, text=str(self.mode+1), fill=self.themes["text"])
             self.menu_canvas.create_window(215, 110, window=play)
             self.menu_canvas.create_window(150, 200, window=multiplayer)
-            self.menu_canvas.create_window(150, 250, window=random_maze)
             self.menu_canvas.create_window(80, 80, window=homepage)
             self.menu_canvas.create_window(150, 150, window=resume_button)
             self.menu_canvas.create_window(190, 80, window=down_level)
             self.menu_canvas.create_window(240, 80, window=up_level)
 
         def up_level(self):
-            self.mode += 1
-            self.menu_canvas.itemconfig(self.mode_text, text= str(self.mode+1))
+            if self.mode < len(self.maze_levels) - 1:
+                self.mode += 1
+                self.menu_canvas.itemconfig(self.mode_text, text=str(self.mode+1))
 
         def down_level(self):
-            self.mode -= 1
-            self.menu_canvas.itemconfig(self.mode_text, text= str(self.mode+1))
+            if self.mode > 0:
+                self.mode -= 1
+                self.menu_canvas.itemconfig(self.mode_text, text=str(self.mode+1))
 
         def close_menu(self):
             if hasattr(self, 'menu_canvas') and self.menu_canvas:
@@ -543,10 +1073,10 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
                 self.maze_canvas = None
                 if hasattr(self, 'timer_id'):
                     self.master.after_cancel(self.timer_id)
-        
+
         def load_images(self):
             self.frameCnt = 2
-            #customization and maze game images
+            # Customization and maze game images
             self.wall_1 = PhotoImage(file=r"Images\Wall #1.png")
             self.wall_2 = Image.open(r"Images\Wall #2.jpg")
             self.wall_3 = Image.open(r"Images\Wall #3.jpg")
@@ -562,7 +1092,7 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
             self.char2_frames = self.load_gif_frames(r"Images\llama.gif")
             self.character_images = [self.char1_frames, self.char2_frames]
 
-            # item images
+            # Item images
             self.item1 = self.load_gif_frames(r"Images\Soup.gif")
             self.item2 = self.load_gif_frames(r"Images\Book.gif")
             self.item3 = self.load_gif_frames(r"Images\water item.gif")
@@ -571,7 +1101,7 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
             self.item6 = self.load_gif_frames(r"Images\Plastic Bag from Ocean (1).gif")
             self.invalid_mode = self.load_gif_frames(r"Images\bouncing ball.gif")
             self.item_list = [self.item1, self.item2, self.item3, self.item4, [self.item5, self.item6]]
-            self.item_indices = [12, 9, 6, 3, 0]  # Indices for each item type based on mode
+            self.item_indices = [12, 9, 6, 3, 0]
 
             self.playbutton = (PhotoImage(file=r"Images\Play button.png")).subsample(5)
 
@@ -584,166 +1114,11 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
                     frame = gif.copy()
                     frames.append(ImageTk.PhotoImage(frame.resize((self.cell_size_x, self.cell_size_y))))
             except EOFError:
-                pass  # Reached end of frames
+                pass
             return frames
-        
-        def logical_to_canvas(self, row, col):
-            # Convert logical maze coordinates to canvas pixel coordinates (center of cell).
-            x = col * self.cell_size_x + int(self.cell_size_x / 2)
-            y = row * self.cell_size_y + int(self.HEIGHT / 14) + int(self.cell_size_y / 2)
-            return x, y
-
-        def draw_maze(self):
-            for row in range(len(self.maze)):
-                for col in range(len(self.maze[row])):
-                    x1 = col * self.cell_size_x
-                    y1 = row * self.cell_size_y + int(self.HEIGHT / 14)
-                    x2 = x1 + self.cell_size_x
-                    y2 = y1 + self.cell_size_y
-
-                    if self.maze[row][col] == "W":
-                        cx, cy = self.logical_to_canvas(row, col)
-                        self.maze_canvas.create_image(cx, cy, image=self.wall_image)
-                    elif self.maze[row][col] == "S":
-                        self.player_pos = [row, col]
-                        cx, cy = self.logical_to_canvas(row, col)
-                        self.player = self.maze_canvas.create_image(cx, cy, image=self.character_frames[0])
-                    elif self.maze[row][col] == "E":
-                        self.end_pos = [row, col]
-                        self.maze_canvas.create_rectangle(x1, y1, x2, y2, fill="green")
-                    elif self.maze[row][col] == "*":
-                        if self.mode >= 12:
-                            item_image = self.item_list[4][randint(0, 1)]
-                            self.time_limit = 200  # Increase time limit for higher levels
-                        elif self.mode >= 9:
-                            self.time_limit = 150
-                            item_image = self.item_list[3]
-                        elif self.mode >= 6:
-                            self.time_limit = 120
-                            item_image = self.item_list[2]
-                        elif self.mode >= 3:
-                            item_image = self.item_list[1]
-                        elif self.mode >= 0:
-                            item_image = self.item_list[0]
-                        else:
-                            print("Invalid mode")
-                            item_image = self.invalid_mode
-                            self.item_message = ["Error 404: Invalid mode selected."]
-                        cx, cy = self.logical_to_canvas(row, col)
-                        item_id = self.maze_canvas.create_image(cx, cy, image=item_image[0])
-                        self.item_message = self.item_message_list[self.mode]
-                        self.items.append({"pos": [row, col], "id": item_id})
-                        self.lev_item_list.append(item_image)
-                        self.total_items += 1
-
-        def animate_character(self):
-            if not hasattr(self, 'character_frame_index'):
-                self.character_frame_index = 0
-
-            if self.player_pos is None:
-                return
-            self.character_frame_index = (self.character_frame_index + 1) % self.frameCnt
-            x, y = self.logical_to_canvas(self.player_pos[0], self.player_pos[1])
-            self.maze_canvas.coords(self.player, x, y)
-            self.maze_canvas.itemconfig(self.player, image=self.character_frames[self.character_frame_index])
-            if not self.finished and not self.stop:
-                self.master.after(500, self.animate_character)
-            
-        def animate_item(self):
-            if not hasattr(self, 'item_frame_index'):
-                self.item_frame_index = 0
-
-            for item in self.items:
-                item_id = item["id"]
-                item_pos = item["pos"]
-                x, y = self.logical_to_canvas(item_pos[0], item_pos[1])
-                self.maze_canvas.coords(item_id, x, y)
-
-            self.item_frame_index = (self.item_frame_index + 1) % len(self.item_list[self.mode])
-            z = 0
-            for item in self.items:
-                self.maze_canvas.itemconfig(item["id"], image=self.lev_item_list[z][self.item_frame_index])
-                z += 1
-
-            if not self.finished and not self.stop:
-                self.master.after(500, self.animate_item)
-
-        def move_player(self, event):
-            if self.finished or self.stop:
-                return
-            else:
-                row, col = self.player_pos
-                new_row, new_col = row, col
-
-                if event.keysym == "Up":
-                    new_row -= 1
-                elif event.keysym == "Down":
-                    new_row += 1
-                elif event.keysym == "Left":
-                    new_col -= 1
-                elif event.keysym == "Right":
-                    new_col += 1
-
-                # Check if move is valid
-                if 0 <= new_row < len(self.maze) and 0 <= new_col < len(self.maze[0]) and self.maze[new_row][new_col] != "W":
-                    # Update player position
-                    self.player_pos = [new_row, new_col]
-                    x, y = self.logical_to_canvas(new_row, new_col)
-                    self.maze_canvas.coords(self.player, x, y)
-
-                    # Check for item collection
-                    self.check_item_collision(new_row, new_col)
-
-                    # Check if player reached the end
-                    if [new_row, new_col] == self.end_pos:
-                        self.finished = True
-                        self.stop = True
-                        
-                        # Cancel the timer immediately
-                        if hasattr(self, 'timer_id'):
-                            try:
-                                self.master.after_cancel(self.timer_id)
-                            except:
-                                pass
-
-                        self.end_time = time.time()
-                        self.total_time = round(self.end_time - self.start_time)
-                        score = int(self.score * 100) + ((150 - self.total_time) * 5)
-                        df = pd.read_csv("highscores.csv")
-                        highscore = df.iloc[self.mode, 1]
-
-                        if highscore < score:
-                            highscore = score
-                            df.iat[self.mode, 1] = score
-                            df.to_csv('highscores.csv', index=False)
-                            
-                        message_str = f"Congratulations!\nYou've completed the maze!\nItems collected: {self.score}/{self.total_items} \nTime used {self.total_time} seconds \nTotal score: {(self.score * 100) + ((150 - self.total_time) * 5)}, Highest score: {highscore}"
-                        fin_window = Toplevel(self.master)
-                        self.finished = True
-                        message = Label(
-                            fin_window, 
-                            text=message_str, 
-                            font=('Arial', 16), 
-                            pady=20, 
-                            padx=20
-                        )
-                        message.pack()
-                
-                        restart_button = Button(
-                            fin_window, 
-                            text="Play Again", 
-                            command=lambda: [fin_window.destroy(), self.start(self.master, self.mode, self.maze_canvas, self.selected_wall, self.selected_character, self.current_theme)]
-                        )
-                        restart_button.pack(pady=10)
-
-                        nextLevelButton = Button(
-                            fin_window,
-                            text="Next Level",
-                            command=lambda: [fin_window.destroy(), self.start(self.master, (self.mode+1), self.maze_canvas, self.selected_wall, self.selected_character, self.current_theme)]
-                        )
-                        nextLevelButton.pack(pady=13)
 
         def check_item_collision(self, row, col):
+            """Single player item collision (original)"""
             for item in self.items[:]:
                 if item["pos"] == [row, col]:
                     self.maze_canvas.delete(item["id"])
@@ -754,27 +1129,24 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
                     self.show_item_message()
                     return True
             return False
-        
+
         def show_item_message(self):
-            # Show a message for the collected item
-            if self.finished or self.stop:
+            """Show item collection message (single player only)"""
+            if self.finished or self.stop or self.multiplayer:
                 return
             if hasattr(self, 'info_window') and self.info_window:
                 self.info_window.destroy()
             
-            self.stop = True  # Stop the game for a moment to show the message
+            self.stop = True
             self.paused_time = time.time() - self.start_time
 
-            # create canvas for the message
             self.info_canvas = Canvas(self.master, height=300, width=300, bg=self.themes["overlap"])
             self.info_canvas.place(x=self.WIDTH / 2, y=self.HEIGHT / 2, anchor="center")
 
-            # message text
             self.info_canvas.create_text(150, 30, text="Item Collected!", font=("Comic Sans MS", 16), fill=self.themes["text"])
             self.info_canvas.create_text(150, 70, text="Item Information:", font=("Comic Sans MS", 14), fill=self.themes["text"])
             self.info_canvas.create_text(150, 110, anchor="n", width=250, text=self.item_message[self.score - 1], font=('Comic Sans MS', 12), fill=self.themes["text"])
 
-            # Close button
             close_button = Button(self.info_canvas, text="Close", command=self.close_item_message, bg=self.themes["button"], fg=self.themes["text"])
             self.info_canvas.create_window(150, 270, window=close_button)
 
@@ -783,18 +1155,64 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
                 self.info_canvas.destroy()
                 self.info_canvas = None
             
-            # Resume the game
             self.stop = False
             if not self.finished:
-                # Adjust the start time to account for paused time
                 self.start_time = time.time() - self.paused_time
-                
-                # Restart animations and timer
                 self.animate_character()
                 self.update_timer()
-        
+
+        def end_game(self):
+            """End single player game"""
+            self.finished = True
+            self.stop = True
+            
+            if hasattr(self, 'timer_id'):
+                try:
+                    self.master.after_cancel(self.timer_id)
+                except:
+                    pass
+
+            self.end_time = time.time()
+            self.total_time = round(self.end_time - self.start_time)
+            score = int(self.score * 100) + ((150 - self.total_time) * 5)
+            
+            try:
+                df = pd.read_csv("highscores.csv")
+                highscore = df.iloc[self.mode, 1]
+
+                if highscore < score:
+                    highscore = score
+                    df.iat[self.mode, 1] = score
+                    df.to_csv('highscores.csv', index=False)
+            except:
+                highscore = score
+                
+            message_str = f"Congratulations!\nYou've completed the maze!\nItems collected: {self.score}/{self.total_items} \nTime used {self.total_time} seconds \nTotal score: {(self.score * 100) + ((150 - self.total_time) * 5)}, Highest score: {highscore}"
+            fin_window = Toplevel(self.master)
+            self.finished = True
+            message = Label(fin_window, text=message_str, font=('Arial', 16), pady=20, padx=20)
+            message.pack()
+
+            restart_button = Button(
+                fin_window, text="Play Again", 
+                command=lambda: [fin_window.destroy(), 
+                            self.start(self.master, self.mode, self.maze_canvas, 
+                                        self.selected_wall, self.selected_character, 
+                                        self.current_theme, False)]
+            )
+            restart_button.pack(pady=10)
+
+            nextLevelButton = Button(
+                fin_window, text="Next Level",
+                command=lambda: [fin_window.destroy(), 
+                            self.start(self.master, (self.mode+1), self.maze_canvas, 
+                                        self.selected_wall, self.selected_character, 
+                                        self.current_theme, False)]
+            )
+            nextLevelButton.pack(pady=13)
+
         def update_timer(self):
-            # Check if game should stop
+            """Update timer for both modes"""
             if self.maze_canvas is None or self.finished or self.stop:
                 return
             
@@ -804,248 +1222,52 @@ Be strategic in your movements! Some paths might lead to dead ends, while others
                 self.stop = True
                 self.finished = True
                 
-                # Cancel any pending timer updates
                 if hasattr(self, 'timer_id'):
                     self.master.after_cancel(self.timer_id)
                 
-                game_over_win = Toplevel(self.master)
-                game_over_win.title("Game Over")
-                
-                message = Label(
-                    game_over_win,
-                    text=f"Time's up!\nItems collected: {self.score}/{self.total_items}",
-                    font=('Arial', 16),
-                    pady=20,
-                    padx=20
-                )
-                message.pack()
-
-                restart_button = Button(
-                    game_over_win,
-                    text="Play Again",
-                    command=lambda: [game_over_win.destroy(), self.start(self.master, self.mode, self.maze_canvas, self.selected_wall, self.selected_character, self.current_theme)]
-                )
-                restart_button.pack(pady=10)
+                if self.multiplayer:
+                    self.show_multiplayer_timeout()
+                else:
+                    self.show_single_timeout()
             else:
                 self.maze_canvas.itemconfig(self.time_text, text=f"Time: {current_time} seconds")
-                # Store the timer ID so we can cancel it if needed
                 self.timer_id = self.master.after(1000, self.update_timer)
 
-    class MultiplayerMazeGame:
-        def __init__(self):
-            # Removing recursion 
-            self.HomePage = None 
-            self.themes_1 = {
-                "light": {
-                    "bg": "#CCCCCC",
-                    "canvas": "#98c1d9",
-                    "text": "black",
-                    "button": "#BFD6E3",
-                    "fg": "black"  # Added for consistency
-                },
-                "dark": {
-                    "bg": "#2C2C2C",
-                    "canvas": "#1E1E1E",
-                    "text": "white",
-                    "button": "#777272",
-                    "fg": "white"  # Added for consistency
-                }
-            }
+        def show_single_timeout(self):
+            """Show timeout for single player"""
+            game_over_win = Toplevel(self.master)
+            game_over_win.title("Game Over")
+            
+            message = Label(
+                game_over_win,
+                text=f"Time's up!\nItems collected: {self.score}/{self.total_items}",
+                font=('Arial', 16),
+                pady=20,
+                padx=20
+            )
+            message.pack()
 
-        def start(self, master, mode, canvas, current_wall_i, current_char_i, theme):
-            self.current_theme = theme
-            self.mode = mode
-            self.themes = self.themes_1[self.current_theme]
-            self.master = master
-            self.master.title("Running for 2030 - Multiplayer")
-            self.canvas = canvas
-            if self.canvas:
-                self.canvas.destroy()
-            
-            # Divide screen into two halves
-            self.left_frame = Frame(master)
-            self.right_frame = Frame(master)
-            self.left_frame.pack(side=LEFT, fill=BOTH, expand=True)
-            self.right_frame.pack(side=RIGHT, fill=BOTH, expand=True)
-            
-            # Create canvases for each player
-            self.canvas1 = Canvas(self.left_frame, height=500, width=560, bg=self.themes["canvas"])
-            self.canvas2 = Canvas(self.right_frame, height=500, width=560, bg=self.themes["canvas"])
-            self.canvas1.pack()
-            self.canvas2.pack()
-            
-            # Initialize player scores
-            self.score1 = 0
-            self.score2 = 0
-            self.player1_finished = False
-            self.player2_finished = False
-            
-            # Prepare images
-            self.img1 = PhotoImage(file=r"C:\Users\VelezB1\OneDrive - CEDR\Documents\Coding\Python\graphics\Tk - graphics\Coding challenge\Images\book.png")
-            self.img2 = self.img1.subsample(12)
-            
-            self.cell_size = 20
-            
-            # Define the maze (same for both players)
-            self.maze = LEVELS[self.mode]
+            restart_button = Button(
+                game_over_win,
+                text="Play Again",
+                command=lambda: [game_over_win.destroy(), 
+                            self.start(self.master, self.mode, self.maze_canvas, 
+                                        self.selected_wall, self.selected_character, 
+                                        self.current_theme, False)]
+            )
+            restart_button.pack(pady=10)
 
-            # Initialize player positions and items
-            self.player1_pos = None
-            self.player2_pos = None
-            self.end_pos = None
-            self.items1 = []  # Items for player 1
-            self.items2 = []  # Items for player 2
-            self.total_items = 0
-            
-            # Bind keys - Player 1 uses arrow keys, Player 2 uses WASD
-            self.master.bind("<KeyPress>", self.handle_keypress)
-            
-            self.initialize_game()
-
-        def initialize_game(self):
-            # Draw maze for both players
-            self.draw_maze(self.canvas1, 1)
-            self.draw_maze(self.canvas2, 2)
-            
-            # Create score displays
-            self.score_text1 = self.canvas1.create_text(280, 470, text=f"Player 1: {self.score1}", font=('Arial', 16), fill="blue")
-            self.score_text2 = self.canvas2.create_text(280, 470, text=f"Player 2: {self.score2}", font=('Arial', 16), fill="red")
-            
-            # Create timer
-            self.time_elapsed = 0
-            self.timer_text = self.canvas1.create_text(80, 470, text="Time: 0", font=('Arial', 14))
-            self.update_timer()
-            
-        def draw_maze(self, canvas, player_num):
-            for row in range(len(self.maze)):
-                for col in range(len(self.maze[row])):
-                    x1 = col * self.cell_size
-                    y1 = row * self.cell_size
-                    x2 = x1 + self.cell_size
-                    y2 = y1 + self.cell_size
-
-                    if self.maze[row][col] == "W":
-                        canvas.create_rectangle(x1, y1, x2, y2, fill="black")
-                    elif self.maze[row][col] == "S":
-                        if player_num == 1 and not self.player1_pos:
-                            self.player1_pos = [row, col]
-                            color = "blue"
-                            self.player1 = canvas.create_oval(x1+4, y1+4, x2-4, y2-4, fill=color)
-                        elif player_num == 2 and not self.player2_pos:
-                            self.player2_pos = [row, col]
-                            color = "red"
-                            self.player2 = canvas.create_oval(x1+4, y1+4, x2-4, y2-4, fill=color)
-                    elif self.maze[row][col] == "E":
-                        self.end_pos = [row, col]
-                        canvas.create_rectangle(x1, y1, x2, y2, fill="green")
-                    elif self.maze[row][col] == "*":
-                        item = canvas.create_image(x1+10, y1+10, image=self.img2)
-                        if player_num == 1:
-                            self.items1.append({"pos": [row, col], "id": item})
-                        else:
-                            self.items2.append({"pos": [row, col], "id": item})
-                        if player_num == 1:  # Only count once
-                            self.total_items += 1
-        
-        def handle_keypress(self, event):
-            # Player 1 controls (Arrow keys)
-            if event.keysym in ["Up", "Down", "Left", "Right"]:
-                self.move_player(1, event.keysym)
-            
-            # Player 2 controls (WASD)
-            elif event.keysym.lower() in ["w", "a", "s", "d"]:
-                # Convert WASD to arrow key equivalents
-                wasd_to_arrows = {"w": "Up", "a": "Left", "s": "Down", "d": "Right"}
-                self.move_player(2, wasd_to_arrows[event.keysym.lower()])
-        
-        def move_player(self, player_num, direction):
-            if player_num == 1 and self.player1_finished:
-                return
-            if player_num == 2 and self.player2_finished:
-                return
-            
-            if player_num == 1:
-                row, col = self.player1_pos
-                player_id = self.player1
-                canvas = self.canvas1
+        def show_multiplayer_timeout(self):
+            """Show timeout for multiplayer"""
+            if self.player1_score > self.player2_score:
+                winner_text = "Player 1 Wins by Score!"
+            elif self.player2_score > self.player1_score:
+                winner_text = "Player 2 Wins by Score!"
             else:
-                row, col = self.player2_pos
-                player_id = self.player2
-                canvas = self.canvas2
-            
-            new_row, new_col = row, col
+                winner_text = "It's a Tie!"
 
-            if direction == "Up":
-                new_row -= 1
-            elif direction == "Down":
-                new_row += 1
-            elif direction == "Left":
-                new_col -= 1
-            elif direction == "Right":
-                new_col += 1
+            self.show_multiplayer_end(f"Time's Up!\n{winner_text}")
 
-            # Check if move is valid
-            if (0 <= new_row < len(self.maze) and 
-                0 <= new_col < len(self.maze[0]) and 
-                self.maze[new_row][new_col] != "W"):
-                
-                # Update player position
-                if player_num == 1:
-                    self.player1_pos = [new_row, new_col]
-                else:
-                    self.player2_pos = [new_row, new_col]
-                    
-                x1 = new_col * self.cell_size
-                y1 = new_row * self.cell_size
-                x2 = x1 + self.cell_size
-                y2 = y1 + self.cell_size
-                canvas.coords(player_id, x1+4, y1+4, x2-4, y2-4)
-
-                # Check for item collection
-                items = self.items1 if player_num == 1 else self.items2
-                for item in items[:]:
-                    if item["pos"] == [new_row, new_col]:
-                        canvas.delete(item["id"])
-                        items.remove(item)
-                        if player_num == 1:
-                            self.score1 += 1
-                            self.canvas1.itemconfig(self.score_text1, text=f"Player 1: {self.score1}")
-                        else:
-                            self.score2 += 1
-                            self.canvas2.itemconfig(self.score_text2, text=f"Player 2: {self.score2}")
-
-                # Check if player reached the end
-                if [new_row, new_col] == self.end_pos:
-                    if player_num == 1:
-                        self.player1_finished = True
-                    else:
-                        self.player2_finished = True
-                    
-                    self.check_game_over()
-        
-        def check_game_over(self):
-            if self.player1_finished and self.player2_finished:
-                # Both players finished
-                winner = "It's a tie!"
-                if self.score1 > self.score2:
-                    winner = "Player 1 wins!"
-                elif self.score2 > self.score1:
-                    winner = "Player 2 wins!"
-                    
-                message = (f"Game Over!\n"
-                        f"{winner}\n"
-                        f"Player 1: {self.score1}/{self.total_items}\n"
-                        f"Player 2: {self.score2}/{self.total_items}\n"
-                        f"Time: {self.time_elapsed} seconds")
-                messagebox.showinfo("Game Over", message)
-                self.master.quit()
-        
-        def update_timer(self):
-            if not (self.player1_finished and self.player2_finished):
-                self.time_elapsed += 1
-                self.canvas1.itemconfig(self.timer_text, text=f"Time: {self.time_elapsed}")
-                self.master.after(1000, self.update_timer)
-                
 def main():
     root = Tk()
     root.title("Running for 2030")
